@@ -32,9 +32,9 @@ const findMatchingState = <T extends NavigationState>(
     return [undefined, undefined];
   }
 
-  // Tab and drawer will have `history` property, but stack will have history in `routes`
-  const aHistoryLength = a.history ? a.history.length : a.routes.length;
-  const bHistoryLength = b.history ? b.history.length : b.routes.length;
+  // Tab and drawer will have `history` property, but a stack's active depth is `index + 1`
+  const aHistoryLength = a.history ? a.history.length : a.index + 1;
+  const bHistoryLength = b.history ? b.history.length : b.index + 1;
 
   const aRoute = a.routes[a.index]!;
   const bRoute = b.routes[b.index]!;
@@ -424,10 +424,10 @@ export function useLinking(
         path !== pendingPath
       ) {
         const historyDelta =
-          (focusedState.history ? focusedState.history.length : focusedState.routes.length) -
+          (focusedState.history ? focusedState.history.length : focusedState.index + 1) -
           (previousFocusedState.history
             ? previousFocusedState.history.length
-            : previousFocusedState.routes.length);
+            : previousFocusedState.index + 1);
 
         if (historyDelta > 0) {
           // If history length is increased, we should pushState
