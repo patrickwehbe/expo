@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import {
   CommonActions,
   type ParamListBase,
@@ -13,6 +15,7 @@ import type {
   MaterialTopTabNavigationHelpers,
 } from '../types';
 import { MaterialTopTabBar } from './MaterialTopTabBar';
+import { useStableTabOrder } from '../../core/useStableTabOrder';
 import { TabAnimationContext } from '../utils/TabAnimationContext';
 
 // Use dynamic import to avoid having direct dependency on react-native-tab-view.
@@ -45,6 +48,22 @@ export function MaterialTopTabView({
   const { colors } = useTheme();
   const { direction } = useLocale();
 
+  // `state.routes` is ordered by the navigator's back stack; render the strip and
+  // pager in stable declaration order and detect focus by key.
+  const orderedRoutes = useStableTabOrder(state);
+  const focusedKey = state.routes[state.index]!.key;
+  const orderedState = useMemo(
+    () => ({
+      ...state,
+      routes: orderedRoutes,
+      index: Math.max(
+        0,
+        orderedRoutes.findIndex((route) => route.key === focusedKey)
+      ),
+    }),
+    [state, orderedRoutes, focusedKey]
+  );
+
   const renderTabBar: React.ComponentProps<any>['renderTabBar'] = ({
     /* eslint-disable @typescript-eslint/no-unused-vars */
     navigationState,
@@ -54,20 +73,20 @@ export function MaterialTopTabView({
   }: any) => {
     return tabBar({
       ...rest,
-      state,
+      state: orderedState,
       navigation,
       descriptors,
     });
   };
 
-  const focusedOptions = descriptors[state.routes[state.index]!.key]!.options;
+  const focusedOptions = descriptors[focusedKey]!.options;
 
   return (
     <TabView<Route<string>>
       {...rest}
       onIndexChange={(index: number) => {
         navigation.dispatch({
-          ...CommonActions.navigate(state.routes[index]!),
+          ...CommonActions.navigate(orderedRoutes[index]!),
           target: state.key,
         });
       }}
@@ -76,7 +95,7 @@ export function MaterialTopTabView({
           {descriptors[route.key]!.render()}
         </TabAnimationContext.Provider>
       )}
-      navigationState={state}
+      navigationState={orderedState}
       renderTabBar={renderTabBar}
       renderLazyPlaceholder={({ route }: any) =>
         descriptors[route.key]!.options.lazyPlaceholder?.() ?? null

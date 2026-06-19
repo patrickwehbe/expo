@@ -148,8 +148,11 @@ export function DrawerRouter({
         routeGetIdList,
       });
 
+      // The drawer keeps its open/close status in its own `history` array (the tab
+      // router stores visit order in `routes`), so seed it empty.
       return {
         ...state,
+        history: [],
         default: defaultStatus,
         stale: false,
         key: `drawer-${nanoid()}`,
@@ -161,23 +164,25 @@ export function DrawerRouter({
         return partialState;
       }
 
-      let state = router.getRehydratedState(partialState, {
+      const tabState = router.getRehydratedState(partialState, {
         routeNames,
         routeParamList,
         routeGetIdList,
       });
 
-      if (isDrawerInHistory(partialState)) {
-        // Re-sync the drawer entry in history to correct it if it was wrong
-        state = removeDrawerFromHistory(state);
-        state = addDrawerToHistory(state);
-      }
-
-      return {
-        ...state,
+      let state: DrawerNavigationState<ParamListBase> = {
+        ...tabState,
+        history: [],
         default: defaultStatus,
         key: `drawer-${nanoid()}`,
       };
+
+      if (isDrawerInHistory(partialState)) {
+        // Restore the open drawer that was persisted.
+        state = addDrawerToHistory(state);
+      }
+
+      return state;
     },
 
     getStateForRouteFocus(state, key) {
@@ -206,7 +211,13 @@ export function DrawerRouter({
         case 'NAVIGATE_DEPRECATED': {
           const result = router.getStateForAction(state, action, options);
 
-          if (result != null && result.index !== state.index) {
+          // A tab change closes the drawer. The focused route is identified by key —
+          // its index in `routes` depends on the active back behavior.
+          if (
+            result != null &&
+            result.index != null &&
+            result.routes[result.index]?.key !== state.routes[state.index]?.key
+          ) {
             return closeDrawer(result as DrawerNavigationState<ParamListBase>);
           }
 
