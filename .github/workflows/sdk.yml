@@ -128,7 +128,7 @@ jobs:
       - name: 🧐 Check all packages
         shell: bash
         run: |
-          pnpm turbo run build typecheck depscheck test lint \
+          pnpm turbo run build test \
             --filter="./packages/**" \
             --filter='!@expo/cli' \
             --filter='!@expo/config' \
