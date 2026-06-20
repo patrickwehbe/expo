@@ -1,4 +1,4 @@
-import { DownloadTask, File, Directory, Paths, UploadTask } from '../..';
+import { DownloadTask, File, Directory, Paths, UploadTask } from '../index';
 import { __resetMockFileSystem } from '../../mocks/FileSystem';
 import { FileMode } from '../File.types';
 
